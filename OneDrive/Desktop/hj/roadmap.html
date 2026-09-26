@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StockLine — Build Manifest</title>
+<style>
+  :root{
+    --bg:#15181d; --panel:#1d2128; --line:#2b303a; --text:#e7e4dc;
+    --muted:#8b909c; --amber:#e0a340; --green:#5fae7f; --mono:'JetBrains Mono','SF Mono',ui-monospace,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    box-sizing:border-box;
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f2f0ea; --panel:#ffffff; --line:#dcd8cd; --text:#22262d; --muted:#6b6f78;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f2f0ea; --panel:#ffffff; --line:#dcd8cd; --text:#22262d; --muted:#6b6f78;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    min-height:100%; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:32px 20px 80px;}
+
+  header{margin-bottom:28px;}
+  .kicker{font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.04em;}
+  h1{font-size:26px; margin:6px 0 4px; font-weight:700; letter-spacing:-.01em;}
+  .sub{color:var(--muted); font-size:14px; margin:0;}
+
+  .overall{
+    display:flex; align-items:center; gap:16px; margin:20px 0 32px;
+    padding:16px 18px; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  }
+  .overall-num{font-family:var(--mono); font-size:22px; font-weight:700; min-width:52px;}
+  .overall-track{flex:1; height:8px; background:var(--line); border-radius:99px; overflow:hidden;}
+  .overall-fill{height:100%; background:var(--amber); border-radius:99px; transition:width .35s ease;}
+  .overall.done .overall-fill{background:var(--green);}
+  .overall-label{font-size:12px; color:var(--muted); white-space:nowrap;}
+
+  .phase{margin-bottom:26px; border:1px solid var(--line); border-radius:10px; background:var(--panel); overflow:hidden;}
+  .phase-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 16px; border-bottom:1px solid var(--line); cursor:pointer; user-select:none;
+  }
+  .phase-title{display:flex; align-items:baseline; gap:8px; min-width:0;}
+  .phase-code{font-family:var(--mono); font-size:12px; color:var(--amber); flex:none;}
+  .phase-name{font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .phase-count{font-family:var(--mono); font-size:12px; color:var(--muted); flex:none;}
+  .phase.complete .phase-count{color:var(--green);}
+  .chev{transition:transform .2s ease; color:var(--muted); flex:none;}
+  .phase.collapsed .chev{transform:rotate(-90deg);}
+
+  .items{list-style:none; margin:0; padding:6px 8px 10px;}
+  .phase.collapsed .items{display:none;}
+  .item{
+    display:flex; align-items:flex-start; gap:10px; padding:9px 8px; border-radius:6px;
+  }
+  .item:hover{background:rgba(255,255,255,.03);}
+  .item input{
+    appearance:none; -webkit-appearance:none; width:18px; height:18px; margin-top:1px; flex:none;
+    border:1.5px solid var(--muted); border-radius:4px; cursor:pointer; position:relative; background:transparent;
+  }
+  .item input:checked{background:var(--green); border-color:var(--green);}
+  .item input:checked::after{
+    content:''; position:absolute; left:5px; top:1px; width:5px; height:9px;
+    border:solid var(--panel); border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
+  .item input:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+  .item label{font-size:14px; line-height:1.45; cursor:pointer;}
+  .item.checked label{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line);}
+
+  .foot{margin-top:28px; display:flex; justify-content:space-between; align-items:center; gap:12px;}
+  .reset{
+    font-family:var(--mono); font-size:12px; color:var(--muted); background:none; border:1px solid var(--line);
+    border-radius:6px; padding:7px 12px; cursor:pointer;
+  }
+  .reset:hover{color:var(--text); border-color:var(--muted);}
+  .saved-note{font-size:12px; color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">STOCKLINE — DB ENGINEERING BUILD MANIFEST</div>
+    <h1>Are you actually done?</h1>
+    <p class="sub">Check off each line as it's really finished, not just started. Your progress stays saved on this device.</p>
+  </header>
+
+  <div class="overall" id="overall">
+    <div class="overall-num" id="overallNum">0%</div>
+    <div class="overall-track"><div class="overall-fill" id="overallFill" style="width:0%"></div></div>
+    <div class="overall-label" id="overallLabel">0 / 0 done</div>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="foot">
+    <span class="saved-note">Saved automatically in this browser</span>
+    <button class="reset" id="resetBtn">Reset all</button>
+  </div>
+</div>
+
+<script>
+const DATA = [
+  { code: "P0", name: "Already done", items: [
+    "ERD complete for all 14 tables",
+    "Supabase project provisioned, schema created",
+    "Git repo initialized, 2 branches, pull-before-push",
+    "CRUD (route/controller/service) scaffolded for all 14 tables",
+    "fn_handle_sale_item trigger live (deduct stock + log movement)",
+  ]},
+  { code: "P1", name: "Server-side automation", items: [
+    "Trigger: delivery receiving increments branch inventory",
+    "Trigger: low-stock alert auto-creates a restock request",
+    "Stored procedure: approve restock \u2192 purchase order",
+    "Trigger: audit log covers delivery + manual adjustments, not just sales",
+    "Row locking (SELECT ... FOR UPDATE) on concurrent sale deductions",
+    "Scoped Postgres RBAC roles created \u2014 app isn't using the admin/root connection",
+    "Audited for raw/unparameterized SQL (no injection risk)",
+  ]},
+  { code: "P2", name: "Optimization & stress test", items: [
+    "Indexes added on foreign keys + hot filter columns",
+    "EXPLAIN ANALYZE run on heaviest queries, results recorded",
+    "RBAC permissions verified by connecting as the scoped role",
+    "Supabase connection pooling / firewall settings checked",
+    "Concurrent-sale load test proves row locking holds",
+  ]},
+  { code: "P3", name: "Frontend & dashboards", items: [
+    "React app wired to the Express API (JSON only)",
+    "Admin dashboard: all branches, staff/products, PO approvals",
+    "Branch Manager dashboard: own-branch inventory + restocks + deliveries",
+    "Cashier view: sale entry, own history, current stock",
+    "Client-side view respects the same branch isolation as RBAC",
+  ]},
+  { code: "P4", name: "Documentation & defense prep", items: [
+    "Data dictionary / schema catalog written",
+    "Migration scripts finalized and sequential",
+    "Query benchmark report compiled from EXPLAIN ANALYZE results",
+    "Every teammate can explain their own layer line-by-line",
+  ]},
+  { code: "GIT", name: "Ongoing Git discipline", items: [
+    "Branch protection enabled on main",
+    "One feature branch per feature, merged via PR",
+    "Commit messages use feat:/fix: prefixes, no bulk 'final files' dumps",
+  ]},
+];
+
+const STORAGE_KEY = "stockline-roadmap-v1";
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveState(state){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+let state = loadState();
+
+function itemId(phaseIdx, itemIdx){ return "p" + phaseIdx + "-i" + itemIdx; }
+
+function render(){
+  const container = document.getElementById("phases");
+  container.innerHTML = "";
+  let totalAll = 0, doneAll = 0;
+
+  DATA.forEach((phase, pi) => {
+    const total = phase.items.length;
+    const done = phase.items.filter((_, ii) => state[itemId(pi, ii)]).length;
+    totalAll += total; doneAll += done;
+
+    const section = document.createElement("div");
+    section.className = "phase" + (done === total ? " complete" : "") + (state["_collapsed_" + pi] ? " collapsed" : "");
+
+    const head = document.createElement("div");
+    head.className = "phase-head";
+    head.innerHTML = `
+      <div class="phase-title">
+        <span class="phase-code">${phase.code}</span>
+        <span class="phase-name">${phase.name}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="phase-count">${done}/${total}</span>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </div>`;
+    head.addEventListener("click", () => {
+      state["_collapsed_" + pi] = !state["_collapsed_" + pi];
+      saveState(state);
+      render();
+    });
+
+    const list = document.createElement("ul");
+    list.className = "items";
+    phase.items.forEach((text, ii) => {
+      const id = itemId(pi, ii);
+      const checked = !!state[id];
+      const li = document.createElement("li");
+      li.className = "item" + (checked ? " checked" : "");
+      const cbId = "cb_" + id;
+      li.innerHTML = `<input type="checkbox" id="${cbId}" ${checked ? "checked" : ""}><label for="${cbId}">${text}</label>`;
+      li.querySelector("input").addEventListener("change", (e) => {
+        state[id] = e.target.checked;
+        saveState(state);
+        render();
+      });
+      list.appendChild(li);
+    });
+
+    section.appendChild(head);
+    section.appendChild(list);
+    container.appendChild(section);
+  });
+
+  const pct = totalAll ? Math.round((doneAll / totalAll) * 100) : 0;
+  document.getElementById("overallNum").textContent = pct + "%";
+  document.getElementById("overallFill").style.width = pct + "%";
+  document.getElementById("overallLabel").textContent = doneAll + " / " + totalAll + " done";
+  document.getElementById("overall").classList.toggle("done", pct === 100);
+}
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if(confirm("Clear all checked progress?")){
+    state = {};
+    saveState(state);
+    render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
